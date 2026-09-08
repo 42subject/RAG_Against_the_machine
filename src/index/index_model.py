@@ -86,8 +86,6 @@ class ChunkBuilder:
         if self._buffer.has_text():
             chunks.append(self._buffer.flush())
         return chunks
-            
-
 
     def _from_txt_file(self) -> list[Chunk]:
         chunks: list[Chunk] = []
