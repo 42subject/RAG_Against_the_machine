@@ -15,3 +15,4 @@ data/datasets/AnsweredQuestions/*
 data/datasets/UnansweredQuestions/*
 !data/datasets/UnansweredQuestions/.gitkeep
 
+__pycache__/
