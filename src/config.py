@@ -6,7 +6,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RAW_DIRECTORY = PROJECT_ROOT / "data" / "raw"
 
 PROCESSED_DIRECTORY = PROJECT_ROOT / "data" / "processed"
-PROCESSED_INDEX = PROCESSED_DIRECTORY / "index.pkl"
+INDEX_FILE = PROCESSED_DIRECTORY / "index.pkl"
+CHUNK_FILE = PROCESSED_DIRECTORY / "chunks.pkl"
 
 DATASETS_DIRECTORY = PROJECT_ROOT / "data" / "datasets"
 OUTPUT_DIRECTORY = PROJECT_ROOT / "data" / "output"
