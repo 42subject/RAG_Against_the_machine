@@ -7,7 +7,6 @@ RAW_DIRECTORY = PROJECT_ROOT / "data" / "raw"
 
 PROCESSED_DIRECTORY = PROJECT_ROOT / "data" / "processed"
 INDEX_FILE = PROCESSED_DIRECTORY / "index.pkl"
-CHUNK_FILE = PROCESSED_DIRECTORY / "chunks.pkl"
 
 DATASETS_DIRECTORY = PROJECT_ROOT / "data" / "datasets"
 OUTPUT_DIRECTORY = PROJECT_ROOT / "data" / "output"
