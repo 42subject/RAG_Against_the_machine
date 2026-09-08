@@ -8,7 +8,8 @@ from .input_models import (
     IndexOptions, QueryOptions,
     SearchDatasetOptions, AnswerDatasetOptions, EvaluateOptions
 )
-from .index.indexer import indexer
+from .index import indexer
+from .search import searcher
 
 
 class CLI:
@@ -50,7 +51,8 @@ class CLI:
         except ValidationError as error:
             raise FireError(error.errors()[0]["msg"])
 
-        print(options)
+        sources = searcher(options)
+        print(sources)
 
     def search_dataset(
             self, dataset_path: Path, save_directory: Path, k: int = 10
