@@ -1,5 +1,3 @@
-
-
 from src.input_models import IndexOptions
 from src.config import RAW_DIRECTORY, PROCESSED_DIRECTORY
 
