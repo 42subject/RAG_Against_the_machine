@@ -1,53 +1,14 @@
 from fire import Fire
 from fire.core import FireError
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import ValidationError
 
-from enum import StrEnum
 from pathlib import Path
 
-
-class InputCommand(StrEnum):
-    INDEX = "index"
-    SEARCH = "search"
-    SEARCH_DATASET = "search_dataset"
-    ANSWER = "answer"
-    ANSWER_DATASET = "answer_dataset"
-    EVALUATE = "evaluate"
-
-
-class QueryOptions(BaseModel):
-    """クエリ作成オプション"""
-
-    question: str
-    k: int = Field(ge=1)
-
-
-class SearchDatasetOptions(BaseModel):
-    """サーチデータセット作成オプション"""
-
-    dataset_path: Path
-    save_directory: Path
-    k: int = Field(ge=1)
-
-
-class IndexOptions(BaseModel):
-    """インデックス作成オプション"""
-
-    max_chunk_size: int = Field(default=2000, gt=0, le=2000)
-
-
-class AnswerDatasetOptions(BaseModel):
-    """アンサーデータセット作成オプション"""
-
-    student_search_results_path: Path
-    save_directory: Path
-
-
-class EvaluateOptions(BaseModel):
-    """evaluateオプション"""
-
-    student_search_results_path: Path
-    dataset_path: Path
+from .input_models import (
+    IndexOptions, QueryOptions,
+    SearchDatasetOptions, AnswerDatasetOptions, EvaluateOptions
+)
+from .index.indexer import indexer
 
 
 class CLI:
@@ -72,7 +33,7 @@ class CLI:
         except ValidationError as error:
             raise FireError(error.errors()[0]["msg"])
 
-        print(options)
+        indexer(options)
 
     def search(self, question: str, k: int = 10) -> None:
         """質問に対して関連度の高いチャンクをk件返す。
