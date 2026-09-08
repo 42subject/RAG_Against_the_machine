@@ -60,12 +60,62 @@ class ChunkBuilder:
 
     def _from_py_file(self) -> list[Chunk]:
         chunks: list[Chunk] = []
+        line_len: int
 
+        with self._file_path.open("r", encoding="UTF-8") as file:
+            raw_text = file.read()
+
+        for line in raw_text.splitlines(keepends=True):
+            line_len = len(line)
+
+            while line_len > self._max_chunk_size:
+                if self._buffer.has_text():
+                    chunks.append(self._buffer.flush())
+                self._buffer.append_text(line[:self._max_chunk_size])
+                chunks.append(self._buffer.flush())
+                line = line[self._max_chunk_size:]
+                line_len = len(line)
+
+            if self._buffer.has_text() and (
+                line.startswith("class")
+                or self._would_exceed(line)
+            ):
+                chunks.append(self._buffer.flush())
+            self._buffer.append_text(line)
+
+        if self._buffer.has_text():
+            chunks.append(self._buffer.flush())
         return chunks
+            
+
 
     def _from_txt_file(self) -> list[Chunk]:
         chunks: list[Chunk] = []
+        line_len: int
 
+        with self._file_path.open("r", encoding="UTF-8") as file:
+            raw_text = file.read()
+
+        for line in raw_text.splitlines(keepends=True):
+            line_len = len(line)
+
+            while line_len > self._max_chunk_size:
+                if self._buffer.has_text():
+                    chunks.append(self._buffer.flush())
+                self._buffer.append_text(line[:self._max_chunk_size])
+                chunks.append(self._buffer.flush())
+                line = line[self._max_chunk_size:]
+                line_len = len(line)
+
+            if self._buffer.has_text() and (
+                line.startswith("\n")
+                or self._would_exceed(line)
+            ):
+                chunks.append(self._buffer.flush())
+            self._buffer.append_text(line)
+
+        if self._buffer.has_text():
+            chunks.append(self._buffer.flush())
         return chunks
 
     def _from_md_file(self) -> list[Chunk]:
