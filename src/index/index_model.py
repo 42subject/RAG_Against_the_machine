@@ -4,7 +4,7 @@ from pathlib import Path
 from collections import defaultdict, Counter
 from math import log
 
-from src.config import BM25_B, BM25_K1
+from src.config import BM25_B, BM25_K1, PROJECT_ROOT
 
 
 class Chunk(BaseModel):
@@ -40,7 +40,7 @@ class ChunkBuffer:
         chunk = Chunk(
             text=self._current_text,
             word_count=len(self._current_text.split()),
-            file_path=str(self._file_path),
+            file_path=str(self._file_path.relative_to(PROJECT_ROOT)),
             first_character_index=first_character_index,
             last_character_index=self._current_character_index,
         )
