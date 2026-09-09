@@ -9,7 +9,7 @@ from .input_models import (
     SearchDatasetOptions, AnswerDatasetOptions, EvaluateOptions
 )
 from .index import indexer
-from .search import searcher
+from .search import searcher, dataset_searcher
 
 
 class CLI:
@@ -73,7 +73,7 @@ class CLI:
         except ValidationError as error:
             raise FireError(error.errors()[0]["msg"])
 
-        print(options)
+        dataset_searcher(options)
 
     def answer(self, question: str, k: int = 10) -> None:
         """質問に対して回答をする。
