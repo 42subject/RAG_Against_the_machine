@@ -2,12 +2,15 @@
 import pickle
 from collections import defaultdict
 
-
 from src.config import INDEX_FILE
-from src.input_models import QueryOptions
+from src.input_models import QueryOptions, SearchDatasetOptions
 from src.index import Index
-
-from .search_models import MinimalSource
+from src.models import (
+    MinimalSearchResults,
+    MinimalSource,
+    RagDataset,
+    StudentSearchResults,
+)
 
 
 def searcher(option: QueryOptions) -> list[MinimalSource]:
@@ -38,3 +41,35 @@ def searcher(option: QueryOptions) -> list[MinimalSource]:
         )
         for chunk_id, _score in top_chunks
     ]
+
+
+def dataset_searcher(options: SearchDatasetOptions) -> None:
+    with options.dataset_path.open("r", encoding="UTF-8") as file:
+        dataset = RagDataset.model_validate_json(file.read())
+
+    search_results: list[MinimalSearchResults] = []
+
+    for unanswered in dataset.rag_questions:
+        question, question_id = unanswered.question, unanswered.question_id
+
+        sources = searcher(
+            QueryOptions(
+                question=question, k=options.k
+            )
+        )
+        search_results.append(MinimalSearchResults(
+            question_id=question_id,
+            question=question,
+            retrieved_sources=sources
+        ))
+
+    student_search_results = StudentSearchResults(
+        search_results=search_results,
+        k=options.k,
+    )
+
+    options.save_directory.mkdir(parents=True, exist_ok=True)
+    output_path = options.save_directory / options.dataset_path.name
+
+    with output_path.open("w", encoding="UTF-8") as file:
+        file.write(student_search_results.model_dump_json(indent=2))
