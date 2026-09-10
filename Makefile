@@ -1,32 +1,44 @@
-.PHONY: install run run-index run-search run-search-dataset run-answer \
-	run-answer-dataset run-evaluate debug clean lint lint-strict
+.PHONY: install run run-docs run-code run-answer-docs run-answer-code \
+	run-index run-search-dataset run-answer-dataset run-evaluate debug \
+	clean lint lint-strict
 
 PYTHON := uv run python
-DATASET_NAME ?= dataset_docs_public.json
-UNANSWERED_DATASET_PATH ?= data/datasets/UnansweredQuestions/$(DATASET_NAME)
-ANSWERED_DATASET_PATH ?= data/datasets/AnsweredQuestions/$(DATASET_NAME)
+DOCS_DATASET_NAME := dataset_docs_public.json
+CODE_DATASET_NAME := dataset_code_public.json
+DATASET_NAME ?= $(DOCS_DATASET_NAME)
+UNANSWERED_DATASET_DIRECTORY := data/datasets/UnansweredQuestions
+ANSWERED_DATASET_DIRECTORY := data/datasets/AnsweredQuestions
 OUTPUT_DIRECTORY ?= data/output
-STUDENT_RESULTS_PATH ?= $(OUTPUT_DIRECTORY)/$(DATASET_NAME)
+UNANSWERED_DATASET_PATH := $(UNANSWERED_DATASET_DIRECTORY)/$(DATASET_NAME)
+ANSWERED_DATASET_PATH := $(ANSWERED_DATASET_DIRECTORY)/$(DATASET_NAME)
+STUDENT_RESULTS_PATH := $(OUTPUT_DIRECTORY)/$(DATASET_NAME)
 K ?= 5
 
 install:
 	uv sync
 
-run:
-	$(PYTHON) -m src $(ARGS)
+run: run-docs run-code
+
+run-docs: run-index
+	$(MAKE) run-search-dataset DATASET_NAME=$(DOCS_DATASET_NAME)
+	$(MAKE) run-evaluate DATASET_NAME=$(DOCS_DATASET_NAME)
+
+run-code: run-index
+	$(MAKE) run-search-dataset DATASET_NAME=$(CODE_DATASET_NAME)
+	$(MAKE) run-evaluate DATASET_NAME=$(CODE_DATASET_NAME)
+
+run-answer-docs:
+	$(MAKE) run-answer-dataset DATASET_NAME=$(DOCS_DATASET_NAME)
+
+run-answer-code:
+	$(MAKE) run-answer-dataset DATASET_NAME=$(CODE_DATASET_NAME)
 
 run-index:
-	$(PYTHON) -m src index $(ARGS)
-
-run-search:
-	$(PYTHON) -m src search $(ARGS)
+	$(PYTHON) -m src index
 
 run-search-dataset:
 	$(PYTHON) -m src search_dataset \
 		$(UNANSWERED_DATASET_PATH) $(OUTPUT_DIRECTORY) --k=$(K)
-
-run-answer:
-	$(PYTHON) -m src answer $(ARGS)
 
 run-answer-dataset:
 	$(PYTHON) -m src answer_dataset \
