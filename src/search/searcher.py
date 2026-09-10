@@ -1,3 +1,4 @@
+from tqdm import tqdm
 
 import pickle
 from collections import defaultdict
@@ -50,7 +51,11 @@ def dataset_searcher(options: SearchDatasetOptions) -> None:
 
     search_results: list[MinimalSearchResults] = []
 
-    for unanswered in dataset.rag_questions:
+    for unanswered in tqdm(
+        dataset.rag_questions,
+        desc="Searching",
+        unit="searched"
+    ):
         question, question_id = unanswered.question, unanswered.question_id
 
         sources = searcher(
