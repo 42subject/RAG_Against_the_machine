@@ -1,11 +1,12 @@
 from tqdm import tqdm
 
 import pickle
-from collections import defaultdict
+from collections import Counter, defaultdict
+from heapq import nlargest
 
 from src.config import INDEX_FILE
 from src.input_models import QueryOptions, SearchDatasetOptions
-from src.index import Index
+from src.index import Index, tokenize
 from src.models import (
     MinimalSearchResults,
     RetrievedSource,
@@ -14,21 +15,28 @@ from src.models import (
 )
 
 
-def searcher(option: QueryOptions) -> list[RetrievedSource]:
+def _load_index() -> Index:
     with INDEX_FILE.open("rb") as file:
         index = pickle.load(file)
     if not isinstance(index, Index):
         raise TypeError("Loaded object is not an Index")
+    return index
+
+
+def _search_index(
+    index: Index,
+    option: QueryOptions,
+) -> list[RetrievedSource]:
 
     chunk_scores: dict[int, float] = defaultdict(float)
-    for word in option.question.split():
-        for chunk_id, score in index.scores[word]:
-            chunk_scores[chunk_id] += score
-    top_chunks = sorted(
+    for word, query_frequency in Counter(tokenize(option.question)).items():
+        for chunk_id, score in index.scores.get(word, ()):
+            chunk_scores[chunk_id] += score * query_frequency
+    top_chunks = nlargest(
+        option.k,
         chunk_scores.items(),
         key=lambda item: item[1],
-        reverse=True,
-    )[:option.k]
+    )
 
     return [
         RetrievedSource(
@@ -45,10 +53,15 @@ def searcher(option: QueryOptions) -> list[RetrievedSource]:
     ]
 
 
+def searcher(option: QueryOptions) -> list[RetrievedSource]:
+    return _search_index(_load_index(), option)
+
+
 def dataset_searcher(options: SearchDatasetOptions) -> None:
     with options.dataset_path.open("r", encoding="UTF-8") as file:
         dataset = RagDataset.model_validate_json(file.read())
 
+    index = _load_index()
     search_results: list[MinimalSearchResults] = []
 
     for unanswered in tqdm(
@@ -58,7 +71,8 @@ def dataset_searcher(options: SearchDatasetOptions) -> None:
     ):
         question, question_id = unanswered.question, unanswered.question_id
 
-        sources = searcher(
+        sources = _search_index(
+            index,
             QueryOptions(
                 question=question, k=options.k
             )

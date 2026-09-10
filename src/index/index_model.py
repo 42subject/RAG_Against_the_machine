@@ -5,7 +5,9 @@ from pathlib import Path
 from collections import defaultdict, Counter
 from math import log
 
-from src.config import BM25_B, BM25_K1, PROJECT_ROOT
+from src.config import BM25_B, BM25_K1, BM25_PATH_WEIGHT, PROJECT_ROOT
+
+from .tokenizer import tokenize
 
 
 class Chunk(BaseModel):
@@ -40,7 +42,7 @@ class ChunkBuffer:
 
         chunk = Chunk(
             text=self._current_text,
-            word_count=len(self._current_text.split()),
+            word_count=len(tokenize(self._current_text)),
             file_path=str(self._file_path.relative_to(PROJECT_ROOT)),
             first_character_index=first_character_index,
             last_character_index=self._current_character_index,
@@ -215,14 +217,20 @@ class Index:
         word_frequencies: dict[
             str, list[tuple[int, int]]
         ] = defaultdict(list)
+        document_lengths: list[int] = []
         for chunk_id, chunk in enumerate(chunks):
-            chunk_word_frequencies = Counter(chunk.text.split())
+            chunk_terms = tokenize(chunk.text)
+            chunk_terms.extend(
+                tokenize(chunk.file_path) * BM25_PATH_WEIGHT
+            )
+            document_lengths.append(len(chunk_terms))
+            chunk_word_frequencies = Counter(chunk_terms)
             for word, frequencies in chunk_word_frequencies.items():
                 word_frequencies[word].append((chunk_id, frequencies))
 
         total_chunk_num = len(chunks)
         average_num_terms_per_chunk = (
-            sum(chunk.word_count for chunk in chunks) /
+            sum(document_lengths) /
             total_chunk_num
         )
 
@@ -236,7 +244,7 @@ class Index:
                 ) / (document_frequency + 0.5)
             )
             for chunk_id, frequency in positions:
-                document_length = chunks[chunk_id].word_count
+                document_length = document_lengths[chunk_id]
                 score = inverse_document_frequency * (
                     frequency * (BM25_K1 + 1)
                 ) / (
