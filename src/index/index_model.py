@@ -6,6 +6,7 @@ from collections import defaultdict, Counter
 from math import log
 
 from src.config import BM25_B, BM25_K1, PROJECT_ROOT
+from src.tokenizer import tokenizer
 
 
 class Chunk(BaseModel):
@@ -216,7 +217,7 @@ class Index:
             str, list[tuple[int, int]]
         ] = defaultdict(list)
         for chunk_id, chunk in enumerate(chunks):
-            chunk_word_frequencies = Counter(chunk.text.split())
+            chunk_word_frequencies = Counter(tokenizer(chunk.text))
             for word, frequencies in chunk_word_frequencies.items():
                 word_frequencies[word].append((chunk_id, frequencies))
 

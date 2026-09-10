@@ -12,6 +12,7 @@ from src.models import (
     RagDataset,
     StudentSearchResults,
 )
+from src.tokenizer import tokenizer
 
 
 def searcher(option: QueryOptions) -> list[RetrievedSource]:
@@ -21,7 +22,7 @@ def searcher(option: QueryOptions) -> list[RetrievedSource]:
         raise TypeError("Loaded object is not an Index")
 
     chunk_scores: dict[int, float] = defaultdict(float)
-    for word in option.question.split():
+    for word in tokenizer(option.question):
         for chunk_id, score in index.scores[word]:
             chunk_scores[chunk_id] += score
     top_chunks = sorted(
