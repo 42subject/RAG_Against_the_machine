@@ -11,6 +11,7 @@ from .input_models import (
 from .index import indexer
 from .search import searcher, dataset_searcher
 from .answer import answer, answer_dataset
+from .evaluate import evaluater
 
 
 class CLI:
@@ -133,7 +134,7 @@ class CLI:
         except ValidationError as error:
             raise FireError(error.errors()[0]["msg"])
 
-        print(options)
+        print(evaluater(options))
 
 
 def main() -> None:

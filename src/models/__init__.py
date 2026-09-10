@@ -4,7 +4,7 @@ from .answer import MinimalAnswer, StudentSearchResultsAndAnswer
 from .dataset import RagDataset
 from .question import AnsweredQuestion, UnansweredQuestion
 from .search import MinimalSearchResults, StudentSearchResults
-from .source import MinimalSource
+from .source import MinimalSource, RetrievedSource
 
 __all__ = [
     "AnsweredQuestion",
@@ -12,6 +12,7 @@ __all__ = [
     "MinimalSearchResults",
     "MinimalSource",
     "RagDataset",
+    "RetrievedSource",
     "StudentSearchResults",
     "StudentSearchResultsAndAnswer",
     "UnansweredQuestion",

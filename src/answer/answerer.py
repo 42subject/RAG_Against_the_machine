@@ -4,7 +4,7 @@ from src.input_models import AnswerDatasetOptions, QueryOptions
 from src.config import MODEL
 from src.models import (
     MinimalAnswer,
-    MinimalSource,
+    RetrievedSource,
     StudentSearchResults,
     StudentSearchResultsAndAnswer,
     UnansweredQuestion,
@@ -16,7 +16,7 @@ from .function_call_generator import QwenClient
 
 def generate_prompt(
     question: str,
-    sources: list[MinimalSource],
+    sources: list[RetrievedSource],
 ) -> str:
     """質問と取得したソースから回答生成用プロンプトを作る。
 

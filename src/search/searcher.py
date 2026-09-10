@@ -8,13 +8,13 @@ from src.input_models import QueryOptions, SearchDatasetOptions
 from src.index import Index
 from src.models import (
     MinimalSearchResults,
-    MinimalSource,
+    RetrievedSource,
     RagDataset,
     StudentSearchResults,
 )
 
 
-def searcher(option: QueryOptions) -> list[MinimalSource]:
+def searcher(option: QueryOptions) -> list[RetrievedSource]:
     with INDEX_FILE.open("rb") as file:
         index = pickle.load(file)
     if not isinstance(index, Index):
@@ -31,7 +31,7 @@ def searcher(option: QueryOptions) -> list[MinimalSource]:
     )[:option.k]
 
     return [
-        MinimalSource(
+        RetrievedSource(
             text=index.chunks[chunk_id].text,
             file_path=index.chunks[chunk_id].file_path,
             first_character_index=(

@@ -7,7 +7,7 @@ UNANSWERED_DATASET_PATH ?= data/datasets/UnansweredQuestions/$(DATASET_NAME)
 ANSWERED_DATASET_PATH ?= data/datasets/AnsweredQuestions/$(DATASET_NAME)
 OUTPUT_DIRECTORY ?= data/output
 STUDENT_RESULTS_PATH ?= $(OUTPUT_DIRECTORY)/$(DATASET_NAME)
-K ?= 1
+K ?= 5
 
 install:
 	uv sync
