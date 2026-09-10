@@ -40,7 +40,7 @@ def searcher(option: QueryOptions) -> list[MinimalSource]:
                 index.chunks[chunk_id].last_character_index
             ),
         )
-        for chunk_id, _score in top_chunks
+        for chunk_id, _ in top_chunks
     ]
 
 
