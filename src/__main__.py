@@ -170,7 +170,7 @@ def main() -> None:
         ValidationError,
         pickle.UnpicklingError,
     ) as error:
-        raise SystemExit(f"ERROR: {error}") from None
+        raise SystemExit(f"ERROR: {error}")
 
 
 if __name__ == "__main__":
