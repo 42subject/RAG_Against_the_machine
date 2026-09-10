@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from tqdm import tqdm
 
 from pathlib import Path
 from collections import defaultdict, Counter
@@ -188,10 +189,19 @@ class Index:
         chunks: list[Chunk] = []
         supported_suffixes = {".py", ".txt", ".md"}
 
-        for file_path in directory_path.rglob("*"):
-            if file_path.is_file() and file_path.suffix in supported_suffixes:
-                builder = ChunkBuilder(file_path, max_chunk_size)
-                chunks.extend(builder.create_chunks())
+        file_paths = [
+            file_path
+            for file_path in directory_path.rglob("*")
+            if file_path.is_file() and file_path.suffix in supported_suffixes
+        ]
+
+        for file_path in tqdm(
+            file_paths,
+            desc="Creating chunks",
+            unit="file"
+        ):
+            builder = ChunkBuilder(file_path, max_chunk_size)
+            chunks.extend(builder.create_chunks())
 
         return chunks
 
