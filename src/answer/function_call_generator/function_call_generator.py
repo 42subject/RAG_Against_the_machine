@@ -1,4 +1,4 @@
-from src.config import MAX_NEW_TOKENS
+from src.config import MAX_NEW_TOKENS, TOKEN_LIMIT
 from src.llm_sdk.llm_sdk import Small_LLM_Model
 
 from .visualizer import Visualizer
@@ -59,6 +59,17 @@ class QwenClient:
 
         self.visualizer.show_rejected_token(next_text)
         return None, displayable_prefix
+
+    def is_token_limit(self, text: str) -> bool:
+        """入力文字列が設定されたトークン上限を超えるか判定する。
+
+        Args:
+            text: トークン数を確認する文字列。
+
+        Returns:
+            トークン数がTOKEN_LIMITを超える場合はTrue。
+        """
+        return len(self.model.encode(text)[0]) > TOKEN_LIMIT - MAX_NEW_TOKENS
 
     def generate(self, prompt: str) -> str:
         """プロンプトから表示可能なテキストだけを生成する。

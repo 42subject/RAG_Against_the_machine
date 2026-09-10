@@ -15,33 +15,40 @@ from .function_call_generator import QwenClient
 
 
 def generate_prompt(
+    llm: QwenClient,
     question: str,
     sources: list[RetrievedSource],
 ) -> str:
     """質問と取得したソースから回答生成用プロンプトを作る。
 
     Args:
+        llm: llmモデル。
         question: 回答する質問文。
         sources: 回答の根拠として使用するソース。
 
     Returns:
         質問とソース本文を含むプロンプト。
     """
-    source_sections: list[str] = []
+    source_sections: str = ""
 
     for index, source in enumerate(sources, start=1):
-        source_sections.append(
-            f"[Source {index}]\n"
-            f"file_path: {source.file_path}\n"
-            f"content:\n{source.text}"
-        )
+        if not (llm.is_token_limit((source_sections +
+                                    f"[Source {index}]\n"
+                                    f"file_path: {source.file_path}\n"
+                                    f"content:\n{source.text}\n\n"))):
+            source_sections += (
+                f"[Source {index}]\n"
+                f"file_path: {source.file_path}\n"
+                f"content:\n{source.text}\n\n"
+            )
+        else:
+            break
 
-    sources_text = "\n\n".join(source_sections)
     return (
         "Answer the question using only the provided sources. "
         "Do not use outside knowledge.\n\n"
         f"Question:\n{question}\n\n"
-        f"Sources:\n{sources_text}\n\n"
+        f"Sources:\n{source_sections}\n\n"
         "Answer:\n"
     )
 
@@ -59,7 +66,7 @@ def answer(option: QueryOptions) -> MinimalAnswer:
     sources = searcher(option)
 
     llm = QwenClient(MODEL)
-    prompt = generate_prompt(question.question, sources)
+    prompt = generate_prompt(llm, question.question, sources)
     return MinimalAnswer(
         question_id=question.question_id,
         question=question.question,
@@ -94,6 +101,7 @@ def answer_dataset(options: AnswerDatasetOptions) -> None:
         desc="Generating answers",
     ):
         prompt = generate_prompt(
+            llm,
             search_result.question,
             search_result.retrieved_sources,
         )
