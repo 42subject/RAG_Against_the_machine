@@ -6,8 +6,20 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "fire>=0.7.1",
+    "flake8>=7.3.0",
+    "mypy>=1.20.0,<2",
     "pydantic>=2.13.5",
     "torch>=2.14.0",
     "tqdm>=4.70.0",
     "transformers>=5.16.1",
 ]
+
+[tool.mypy]
+exclude = [
+    "^data/raw/",
+    "^src/llm_sdk/",
+]
+
+[[tool.mypy.overrides]]
+module = "src.llm_sdk.*"
+ignore_errors = true

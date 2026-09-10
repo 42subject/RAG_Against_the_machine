@@ -52,7 +52,9 @@ debug:
 	$(PYTHON) -m pdb -m src $(ARGS)
 
 clean:
-	rm .venv
+	rm -rf .mypy_cache .pytest_cache .ruff_cache
+	find src -type d -name __pycache__ -prune -exec rm -rf {} +
+	find src -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
 
 lint:
 	uv run flake8 .

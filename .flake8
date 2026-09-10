@@ -1,0 +1,6 @@
+[flake8]
+exclude =
+    .git,
+    .venv,
+    data/raw,
+    src/llm_sdk
