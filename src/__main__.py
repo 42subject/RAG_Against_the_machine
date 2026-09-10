@@ -10,6 +10,7 @@ from .input_models import (
 )
 from .index import indexer
 from .search import searcher, dataset_searcher
+from .answer import answer, answer_dataset
 
 
 class CLI:
@@ -90,7 +91,7 @@ class CLI:
         except ValidationError as error:
             raise FireError(error.errors()[0]["msg"])
 
-        print(options)
+        print(answer(options))
 
     def answer_dataset(
             self, student_search_results_path: Path, save_directory: Path
@@ -112,7 +113,7 @@ class CLI:
         except ValidationError as error:
             raise FireError(error.errors()[0]["msg"])
 
-        print(options)
+        answer_dataset(options)
 
     def evaluate(
             self, student_search_results_path: Path, dataset_path: Path

@@ -11,6 +11,8 @@ INDEX_FILE = PROCESSED_DIRECTORY / "index.pkl"
 DATASETS_DIRECTORY = PROJECT_ROOT / "data" / "datasets"
 OUTPUT_DIRECTORY = PROJECT_ROOT / "data" / "output"
 
+MODEL = "Qwen/Qwen3-0.6B"
+MAX_NEW_TOKENS = 100
 
 BM25_K1 = 1.5
 BM25_B = 0.75

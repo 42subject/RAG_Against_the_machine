@@ -31,6 +31,7 @@ def searcher(option: QueryOptions) -> list[MinimalSource]:
 
     return [
         MinimalSource(
+            text=index.chunks[chunk_id].text,
             file_path=index.chunks[chunk_id].file_path,
             first_character_index=(
                 index.chunks[chunk_id].first_character_index
