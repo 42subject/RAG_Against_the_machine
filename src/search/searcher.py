@@ -15,21 +15,28 @@ from src.models import (
 from src.tokenizer import tokenizer
 
 
-def searcher(option: QueryOptions) -> list[RetrievedSource]:
+def _get_index() -> Index:
     with INDEX_FILE.open("rb") as file:
         index = pickle.load(file)
     if not isinstance(index, Index):
         raise TypeError("Loaded object is not an Index")
+    return index
 
+
+def _search(
+    index: Index,
+    question: str,
+    k: int,
+) -> list[RetrievedSource]:
     chunk_scores: dict[int, float] = defaultdict(float)
-    for word in tokenizer(option.question):
+    for word in tokenizer(question):
         for chunk_id, score in index.scores[word]:
             chunk_scores[chunk_id] += score
     top_chunks = sorted(
         chunk_scores.items(),
         key=lambda item: item[1],
         reverse=True,
-    )[:option.k]
+    )[:k]
 
     return [
         RetrievedSource(
@@ -46,11 +53,20 @@ def searcher(option: QueryOptions) -> list[RetrievedSource]:
     ]
 
 
+def searcher(option: QueryOptions) -> list[RetrievedSource]:
+    return _search(
+        _get_index(),
+        option.question,
+        option.k,
+    )
+
+
 def dataset_searcher(options: SearchDatasetOptions) -> None:
     with options.dataset_path.open("r", encoding="UTF-8") as file:
         dataset = RagDataset.model_validate_json(file.read())
 
     search_results: list[MinimalSearchResults] = []
+    index = _get_index()
 
     for unanswered in tqdm(
         dataset.rag_questions,
@@ -59,10 +75,10 @@ def dataset_searcher(options: SearchDatasetOptions) -> None:
     ):
         question, question_id = unanswered.question, unanswered.question_id
 
-        sources = searcher(
-            QueryOptions(
-                question=question, k=options.k
-            )
+        sources = _search(
+            index,
+            question,
+            options.k,
         )
         search_results.append(MinimalSearchResults(
             question_id=question_id,
