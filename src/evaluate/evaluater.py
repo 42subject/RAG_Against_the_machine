@@ -17,7 +17,18 @@ def _calculate_iou(
     ground_truth: MinimalSource,
     retrieved_source: MinimalSource,
 ) -> float:
-    """同じファイルにある2つの文字範囲のIoUを計算する。"""
+    """同じファイルにある2つの文字範囲のIoUを計算する。
+
+    Args:
+        ground_truth: 正解として指定されたソース位置。
+        retrieved_source: 検索によって取得したソース位置。
+
+    Returns:
+        文字範囲のIoU。同じファイルでなければ0.0。
+
+    Raises:
+        ValueError: いずれかの文字範囲が不正な場合。
+    """
     if ground_truth.file_path != retrieved_source.file_path:
         return 0.0
 
@@ -65,7 +76,19 @@ def _calculate_recall(
     student_result: MinimalSearchResults,
     k: int,
 ) -> float:
-    """1件の質問について上位k件に対するRecallを計算する。"""
+    """1件の質問について上位k件に対するRecallを計算する。
+
+    Args:
+        ground_truth: 質問に対する正解ソース一覧。
+        student_result: 学生実装が返した検索結果。
+        k: 評価に使用する上位件数。
+
+    Returns:
+        発見できた正解ソースの割合。
+
+    Raises:
+        ValueError: 正解ソースが空の場合。
+    """
     if not ground_truth:
         raise ValueError(
             f"No ground-truth sources: {student_result.question_id}"
@@ -85,7 +108,18 @@ def _calculate_recall(
 def _set_ground_truth_dict(
     dataset: RagDataset,
 ) -> dict[str, AnsweredQuestion]:
-    """正解付き質問をquestion_idで検索できる辞書に変換する。"""
+    """正解付き質問をquestion_idで検索できる辞書に変換する。
+
+    Args:
+        dataset: 正解付き質問を含むデータセット。
+
+    Returns:
+        question_idをキーとする正解付き質問の辞書。
+
+    Raises:
+        TypeError: 正解なしの質問が含まれる場合。
+        ValueError: question_idが重複する場合。
+    """
     ground_truth_by_id: dict[str, AnsweredQuestion] = {}
 
     for ground_truth in dataset.rag_questions:
@@ -102,7 +136,19 @@ def _set_ground_truth_dict(
 
 
 def evaluater(option: EvaluateOptions) -> float:
-    """検索結果と正解データを読み込み、質問ごとのRecallを平均する。"""
+    """検索結果と正解データを読み込み、質問ごとのRecallを平均する。
+
+    Args:
+        option: 検索結果と正解データセットのパス。
+
+    Returns:
+        全質問の平均Recall@k。
+
+    Raises:
+        OSError: 入力ファイルを読み込めない場合。
+        TypeError: 正解データセットに未回答質問が含まれる場合。
+        ValueError: 入力内容または評価設定が不正な場合。
+    """
     if not 0.0 <= IOU_BORDER <= 1.0:
         raise ValueError(f"IOU_BORDER must be between 0 and 1: {IOU_BORDER}")
 

@@ -15,14 +15,22 @@ class Visualizer:
         print("\n" * (self.TOTAL_LINES + 1), end="")
 
     def show_generated_text(self, generated_text: str) -> None:
-        """現在までに生成されたテキストを表示する。"""
+        """現在までに生成されたテキストを表示する。
+
+        Args:
+            generated_text: 現在までに生成された全文。
+        """
         self._write_line(
             self.GENERATED_LINE,
             f"generated_text: {generated_text[-50:]!r}",
         )
 
     def show_rejected_token(self, rejected_token: str) -> None:
-        """表示不可能なため拒否したトークンを表示する。"""
+        """表示不可能なため拒否したトークンを表示する。
+
+        Args:
+            rejected_token: 表示を拒否したトークン文字列。
+        """
         self._write_line(
             self.REJECTED_LINE,
             f"rejected_token: {rejected_token!r}",
@@ -32,7 +40,11 @@ class Visualizer:
         self,
         top_tokens: list[tuple[int, str]],
     ) -> None:
-        """次トークン候補の上位を表示する。"""
+        """次トークン候補の上位を表示する。
+
+        Args:
+            top_tokens: トークンIDと復号文字列の組をスコア順に並べた一覧。
+        """
         lines = [
             f"top_token[{index}]: {token_id} {text!r}"
             for index, (token_id, text) in enumerate(
@@ -50,7 +62,12 @@ class Visualizer:
         print()
 
     def _write_line(self, line_index: int, text: str) -> None:
-        """表示ブロック内の指定行を上書きする。"""
+        """表示ブロック内の指定行を上書きする。
+
+        Args:
+            line_index: 表示ブロック先頭からの行番号。
+            text: 表示する文字列。
+        """
         move_up_count = self.TOTAL_LINES - line_index
         print(f"\033[{move_up_count}F", end="")
         print(f"\033[K{text}", end="")

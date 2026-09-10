@@ -47,6 +47,14 @@ def generate_prompt(
 
 
 def answer(option: QueryOptions) -> MinimalAnswer:
+    """質問を検索し、取得したソースを根拠に回答を生成する。
+
+    Args:
+        option: 質問文と参照するソースの最大件数。
+
+    Returns:
+        質問、取得ソース、生成回答を含む結果。
+    """
     question = UnansweredQuestion(question=option.question)
     sources = searcher(option)
 

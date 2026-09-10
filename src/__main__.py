@@ -2,6 +2,7 @@ from fire import Fire
 from fire.core import FireError
 from pydantic import ValidationError
 
+import pickle
 from pathlib import Path
 
 from .input_models import (
@@ -44,6 +45,9 @@ class CLI:
         Args:
             question (str): 質問文
             k (int, optional): 返答数. Defaults to 10.
+
+        Raises:
+            FireError: 質問または取得件数が不正な場合。
         """
         try:
             options = QueryOptions(
@@ -65,6 +69,9 @@ class CLI:
             dataset_path (Path): datasetのパス
             save_directory (Path): 結果の保存先
             k (int, optional): 返答数. Defaults to 10.
+
+        Raises:
+            FireError: 入力オプションが不正な場合。
         """
         try:
             options = SearchDatasetOptions(
@@ -83,6 +90,9 @@ class CLI:
         Args:
             question (str): 質問文
             k (int, optional): 回答生成時に参照する検索結果の最大件数. Defaults to 10.
+
+        Raises:
+            FireError: 質問または取得件数が不正な場合。
         """
         try:
             options = QueryOptions(
@@ -104,6 +114,9 @@ class CLI:
                 serch_datasetの検索結果JSONファイルのパス
             save_directory (Path):
                 結果の保存先
+
+        Raises:
+            FireError: 入力オプションが不正な場合。
         """
 
         try:
@@ -124,6 +137,9 @@ class CLI:
         Args:
             student_search_results_path (Path): 出力
             dataset_path (Path): 答え
+
+        Raises:
+            FireError: 入力オプションが不正な場合。
         """
 
         try:
@@ -138,8 +154,23 @@ class CLI:
 
 
 def main() -> None:
-    """main"""
-    Fire(CLI)
+    """CLIを起動し、利用者入力や外部ファイルのエラーを表示する。
+
+    Raises:
+        SystemExit: CLI入力または外部データを処理できなかった場合。
+    """
+    try:
+        Fire(CLI)
+    except (
+        EOFError,
+        OSError,
+        RuntimeError,
+        TypeError,
+        ValueError,
+        ValidationError,
+        pickle.UnpicklingError,
+    ) as error:
+        raise SystemExit(f"ERROR: {error}") from None
 
 
 if __name__ == "__main__":

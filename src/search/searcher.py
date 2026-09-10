@@ -16,6 +16,15 @@ from src.tokenizer import tokenizer
 
 
 def _get_index() -> Index:
+    """永続化された検索索引を読み込む。
+
+    Returns:
+        読み込んだ検索索引。
+
+    Raises:
+        OSError: 索引ファイルを読み込めない場合。
+        TypeError: 保存内容がIndexでない場合。
+    """
     with INDEX_FILE.open("rb") as file:
         index = pickle.load(file)
     if not isinstance(index, Index):
@@ -28,6 +37,16 @@ def _search(
     question: str,
     k: int,
 ) -> list[RetrievedSource]:
+    """質問のBM25スコアを集計して上位ソースを返す。
+
+    Args:
+        index: 検索に使用する索引。
+        question: 検索する質問文。
+        k: 返すソースの最大件数。
+
+    Returns:
+        BM25スコアの降順に並べたソース一覧。
+    """
     chunk_scores: dict[int, float] = defaultdict(float)
     for word in tokenizer(question):
         for chunk_id, score in index.scores[word]:
@@ -54,6 +73,14 @@ def _search(
 
 
 def searcher(option: QueryOptions) -> list[RetrievedSource]:
+    """保存済み索引から1件の質問を検索する。
+
+    Args:
+        option: 質問文と取得件数。
+
+    Returns:
+        関連度の高いソース一覧。
+    """
     return _search(
         _get_index(),
         option.question,
@@ -62,6 +89,15 @@ def searcher(option: QueryOptions) -> list[RetrievedSource]:
 
 
 def dataset_searcher(options: SearchDatasetOptions) -> None:
+    """質問データセットを検索し、構造化JSONへ保存する。
+
+    Args:
+        options: データセット、取得件数、保存先の指定。
+
+    Raises:
+        OSError: 入出力ファイルを処理できない場合。
+        ValueError: 入力JSONがデータモデルに適合しない場合。
+    """
     with options.dataset_path.open("r", encoding="UTF-8") as file:
         dataset = RagDataset.model_validate_json(file.read())
 

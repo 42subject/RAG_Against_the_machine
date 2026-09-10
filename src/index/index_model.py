@@ -10,6 +10,16 @@ from src.tokenizer import tokenizer
 
 
 class Chunk(BaseModel):
+    """索引化する本文と元ファイル上の位置を保持する。
+
+    Attributes:
+        text: チャンクの本文。
+        word_count: 本文を空白で分割した語数。
+        file_path: プロジェクトルートからの相対ファイルパス。
+        first_character_index: 元ファイル上の開始文字位置。
+        last_character_index: 元ファイル上の終了文字位置。
+    """
+
     text: str
     word_count: int
     file_path: str
@@ -18,21 +28,51 @@ class Chunk(BaseModel):
 
 
 class ChunkBuffer:
+    """連続する本文を蓄積し、位置情報付きチャンクへ変換する。"""
+
     def __init__(self, file_path: Path) -> None:
+        """空のバッファを初期化する。
+
+        Args:
+            file_path: チャンク元のファイルパス。
+        """
         self._file_path = file_path
         self._current_text = ""
         self._current_character_index = 0
 
     def append_text(self, text: str) -> None:
+        """本文を現在のバッファ末尾へ追加する。
+
+        Args:
+            text: 追加する本文。
+        """
         self._current_text += text
 
     def has_text(self) -> bool:
+        """バッファに本文があるか返す。
+
+        Returns:
+            本文が1文字以上あればTrue。
+        """
         return self._current_text != ""
 
     def text_length(self) -> int:
+        """現在の本文の文字数を返す。
+
+        Returns:
+            バッファに蓄積した文字数。
+        """
         return len(self._current_text)
 
     def flush(self) -> Chunk:
+        """現在の本文を位置情報付きチャンクとして取り出す。
+
+        Returns:
+            バッファの本文から生成したチャンク。
+
+        Raises:
+            RuntimeError: バッファが空の場合。
+        """
         if not self.has_text():
             raise RuntimeError("Cannot create a chunk from empty text")
 
@@ -52,15 +92,39 @@ class ChunkBuffer:
 
 
 class ChunkBuilder:
+    """ファイル形式に応じて検索用チャンクを構築する。"""
+
     def __init__(self, file_path: Path, max_chunk_size: int) -> None:
+        """チャンク生成対象と最大文字数を設定する。
+
+        Args:
+            file_path: 読み込むファイルのパス。
+            max_chunk_size: 1チャンクに含める最大文字数。
+        """
         self._file_path = file_path
         self._max_chunk_size = max_chunk_size
         self._buffer = ChunkBuffer(file_path)
 
     def _would_exceed(self, text: str) -> bool:
+        """本文を追加すると最大文字数を超えるか判定する。
+
+        Args:
+            text: 追加候補の本文。
+
+        Returns:
+            追加後の文字数が上限を超える場合はTrue。
+        """
         return self._buffer.text_length() + len(text) > self._max_chunk_size
 
     def _from_py_file(self) -> list[Chunk]:
+        """Pythonファイルをクラス境界と文字数上限で分割する。
+
+        Returns:
+            元ファイル順のチャンク一覧。
+
+        Raises:
+            OSError: ファイルを読み込めない場合。
+        """
         chunks: list[Chunk] = []
         line_len: int
 
@@ -90,6 +154,14 @@ class ChunkBuilder:
         return chunks
 
     def _from_txt_file(self) -> list[Chunk]:
+        """テキストファイルを空行と文字数上限で分割する。
+
+        Returns:
+            元ファイル順のチャンク一覧。
+
+        Raises:
+            OSError: ファイルを読み込めない場合。
+        """
         chunks: list[Chunk] = []
         line_len: int
 
@@ -119,6 +191,14 @@ class ChunkBuilder:
         return chunks
 
     def _from_md_file(self) -> list[Chunk]:
+        """Markdownファイルを見出しと文字数上限で分割する。
+
+        Returns:
+            元ファイル順のチャンク一覧。
+
+        Raises:
+            OSError: ファイルを読み込めない場合。
+        """
         chunks: list[Chunk] = []
         line_len: int
 
@@ -148,6 +228,14 @@ class ChunkBuilder:
         return chunks
 
     def create_chunks(self) -> list[Chunk]:
+        """拡張子に対応する方法でファイルをチャンク化する。
+
+        Returns:
+            元ファイル順のチャンク一覧。
+
+        Raises:
+            RuntimeError: ファイルの読み込みまたは形式の判定に失敗した場合。
+        """
         try:
             if self._file_path.suffix == ".py":
                 return self._from_py_file()
@@ -164,11 +252,19 @@ class ChunkBuilder:
 
 
 class Index:
+    """チャンクと語ごとのBM25スコアを保持する検索索引。"""
+
     def __init__(
         self,
         chunks: list[Chunk],
         scores: dict[str, list[tuple[int, float]]],
     ) -> None:
+        """計算済みのチャンクと転置スコアを設定する。
+
+        Args:
+            chunks: 索引対象のチャンク一覧。
+            scores: 語ごとのチャンクIDとBM25スコア。
+        """
         self.chunks = chunks
         self.scores = scores
 
@@ -178,6 +274,15 @@ class Index:
         directory_path: Path,
         max_chunk_size: int,
     ) -> "Index":
+        """指定ディレクトリを読み込み、検索索引を構築する。
+
+        Args:
+            directory_path: 索引対象ファイルを含むディレクトリ。
+            max_chunk_size: 1チャンクに含める最大文字数。
+
+        Returns:
+            構築済みの検索索引。
+        """
         chunks = cls._create_chunks(directory_path, max_chunk_size)
         scores = cls._calculate_scores(chunks)
         return cls(chunks, scores)
@@ -187,6 +292,15 @@ class Index:
         directory_path: Path,
         max_chunk_size: int,
     ) -> list[Chunk]:
+        """対応ファイルを再帰的に探索してチャンク化する。
+
+        Args:
+            directory_path: 探索を開始するディレクトリ。
+            max_chunk_size: 1チャンクに含める最大文字数。
+
+        Returns:
+            対応する全ファイルから生成したチャンク一覧。
+        """
         chunks: list[Chunk] = []
         supported_suffixes = {".py", ".txt", ".md"}
 
@@ -210,6 +324,17 @@ class Index:
     def _calculate_scores(
         chunks: list[Chunk],
     ) -> dict[str, list[tuple[int, float]]]:
+        """全チャンクから語ごとのBM25スコアを計算する。
+
+        Args:
+            chunks: スコア計算対象のチャンク一覧。
+
+        Returns:
+            語をキー、チャンクIDとスコアの組を値とする転置索引。
+
+        Raises:
+            RuntimeError: チャンク一覧が空の場合。
+        """
         if not chunks:
             raise RuntimeError("Cannot calculate BM25 scores without chunks")
 
