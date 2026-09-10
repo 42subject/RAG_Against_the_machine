@@ -1,10 +1,11 @@
 from pydantic import BaseModel
+from tqdm import tqdm
 
 from pathlib import Path
 from collections import defaultdict, Counter
 from math import log
 
-from src.config import BM25_B, BM25_K1
+from src.config import BM25_B, BM25_K1, PROJECT_ROOT
 
 
 class Chunk(BaseModel):
@@ -40,7 +41,7 @@ class ChunkBuffer:
         chunk = Chunk(
             text=self._current_text,
             word_count=len(self._current_text.split()),
-            file_path=str(self._file_path),
+            file_path=str(self._file_path.relative_to(PROJECT_ROOT)),
             first_character_index=first_character_index,
             last_character_index=self._current_character_index,
         )
@@ -188,10 +189,19 @@ class Index:
         chunks: list[Chunk] = []
         supported_suffixes = {".py", ".txt", ".md"}
 
-        for file_path in directory_path.rglob("*"):
-            if file_path.is_file() and file_path.suffix in supported_suffixes:
-                builder = ChunkBuilder(file_path, max_chunk_size)
-                chunks.extend(builder.create_chunks())
+        file_paths = [
+            file_path
+            for file_path in directory_path.rglob("*")
+            if file_path.is_file() and file_path.suffix in supported_suffixes
+        ]
+
+        for file_path in tqdm(
+            file_paths,
+            desc="Creating chunks",
+            unit="file"
+        ):
+            builder = ChunkBuilder(file_path, max_chunk_size)
+            chunks.extend(builder.create_chunks())
 
         return chunks
 
