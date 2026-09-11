@@ -16,23 +16,74 @@ class QwenClient:
         self.model = Small_LLM_Model(model_name)
         self.visualizer = Visualizer()
 
-    def _select_displayable_token(
-        self,
-        logits: list[float],
-    ) -> tuple[int | None, str]:
-        """表示可能な次トークンを選択する。
+    def _select_displayable_token_id(self, logits: list[float]) -> int:
+        """表示可能なトークンまたはEOSが見つかるまで候補を制約する。
 
         Args:
             logits: 次トークンごとのスコア。
 
         Returns:
-            継続時のトークンIDと、出力する表示可能文字列。
-            EOSまたは非表示文字を含むトークンではIDをNoneにする。
+            表示可能な文字列へ復号できるトークンID、またはEOSトークンID。
+
+        Raises:
+            RuntimeError: 表示可能なトークンもEOSも存在しない場合。
         """
-        next_token_id = max(
-            range(len(logits)),
-            key=lambda token_id: logits[token_id],
-        )
+        constrained_logits = logits.copy()
+        candidate_token_ids = list(range(len(constrained_logits)))
+
+        while candidate_token_ids:
+            token_id = max(
+                candidate_token_ids,
+                key=lambda candidate_id: constrained_logits[candidate_id],
+            )
+            if token_id == self.model.eos_token_id:
+                return token_id
+
+            token_text = self.model.decode([token_id])
+            if token_text.isprintable():
+                return token_id
+
+            self.visualizer.show_rejected_token(token_text)
+            constrained_logits[token_id] = float("-inf")
+            candidate_token_ids.remove(token_id)
+
+        raise RuntimeError("No displayable token or EOS token found")
+
+    def _get_sentence_completion(
+        self,
+        token_text: str,
+        generated_text: str,
+    ) -> str | None:
+        """文末の改行をEOS相当として扱う文字列を返す。
+
+        Args:
+            token_text: 最高スコアの次トークンを復号した文字列。
+            generated_text: 生成済みの文字列。
+
+        Returns:
+            生成を終了する場合は最後に追加する文字列、それ以外はNone。
+        """
+        if ".\n" in token_text:
+            return token_text.split("\n", maxsplit=1)[0]
+        if generated_text.endswith(".") and token_text.startswith("\n"):
+            return ""
+        return None
+
+    def _select_displayable_token(
+        self,
+        logits: list[float],
+        generated_text: str,
+    ) -> tuple[int | None, str]:
+        """表示可能な次トークンを選択する。
+
+        Args:
+            logits: 次トークンごとのスコア。
+            generated_text: 生成済みの文字列。
+
+        Returns:
+            継続時のトークンIDと、出力する表示可能文字列。
+            EOSの場合だけIDをNoneにする。
+        """
         top_token_ids = sorted(
             range(len(logits)),
             key=lambda token_id: logits[token_id],
@@ -44,21 +95,19 @@ class QwenClient:
         ]
         self.visualizer.show_top_tokens(top_tokens)
 
+        sentence_completion = self._get_sentence_completion(
+            top_tokens[0][1],
+            generated_text,
+        )
+        if sentence_completion is not None:
+            return None, sentence_completion
+
+        next_token_id = self._select_displayable_token_id(logits)
         if next_token_id == self.model.eos_token_id:
             return None, ""
 
         next_text = self.model.decode([next_token_id])
-        if next_text and next_text.isprintable():
-            return next_token_id, next_text
-
-        displayable_prefix = ""
-        for character in next_text:
-            if not character.isprintable():
-                break
-            displayable_prefix += character
-
-        self.visualizer.show_rejected_token(next_text)
-        return None, displayable_prefix
+        return next_token_id, next_text
 
     def is_token_limit(self, text: str) -> bool:
         """入力文字列が設定されたトークン上限を超えるか判定する。
@@ -67,7 +116,7 @@ class QwenClient:
             text: トークン数を確認する文字列。
 
         Returns:
-            トークン数がTOKEN_LIMITを超える場合はTrue。
+            トークン数がTOKEN_LIMIT - MAX_NEW_TOKENSを超える場合はTrue。
         """
         return len(self.model.encode(text)[0]) > TOKEN_LIMIT - MAX_NEW_TOKENS
 
@@ -86,7 +135,10 @@ class QwenClient:
         self.visualizer.initialize()
         for _ in range(MAX_NEW_TOKENS):
             logits = self.model.get_logits_from_input_ids(input_ids)
-            next_token_id, next_text = self._select_displayable_token(logits)
+            next_token_id, next_text = self._select_displayable_token(
+                logits,
+                generated_text,
+            )
             generated_text += next_text
             if next_text:
                 self.visualizer.show_generated_text(generated_text)
