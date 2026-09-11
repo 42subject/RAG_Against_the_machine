@@ -14,6 +14,25 @@ from src.search import searcher
 from .function_call_generator import QwenClient
 
 
+def _build_prompt(question: str, source_sections: str) -> str:
+    """質問と整形済みソースから完成形のプロンプトを作る。
+
+    Args:
+        question: 回答する質問文。
+        source_sections: プロンプトへ含める整形済みソース。
+
+    Returns:
+        モデルへ入力する完成形のプロンプト。
+    """
+    return (
+        "Answer the question using only the provided sources. "
+        "Do not use outside knowledge.\n\n"
+        f"Question:\n{question}\n\n"
+        f"Sources:\n{source_sections}\n\n"
+        "Answer:\n"
+    )
+
+
 def generate_prompt(
     llm: QwenClient,
     question: str,
@@ -28,29 +47,29 @@ def generate_prompt(
 
     Returns:
         質問とソース本文を含むプロンプト。
+
+    Raises:
+        ValueError: ソースを含まないプロンプトが上限を超える場合。
     """
     source_sections: str = ""
+    prompt = _build_prompt(question, source_sections)
+    if llm.is_token_limit(prompt):
+        raise ValueError("Prompt exceeds token limit before adding sources")
 
     for index, source in enumerate(sources, start=1):
-        if not (llm.is_token_limit((source_sections +
-                                    f"[Source {index}]\n"
-                                    f"file_path: {source.file_path}\n"
-                                    f"content:\n{source.text}\n\n"))):
-            source_sections += (
-                f"[Source {index}]\n"
-                f"file_path: {source.file_path}\n"
-                f"content:\n{source.text}\n\n"
-            )
-        else:
+        candidate_source_sections = (
+            source_sections
+            + f"[Source {index}]\n"
+            + f"file_path: {source.file_path}\n"
+            + f"content:\n{source.text}\n\n"
+        )
+        candidate_prompt = _build_prompt(question, candidate_source_sections)
+        if llm.is_token_limit(candidate_prompt):
             break
+        source_sections = candidate_source_sections
+        prompt = candidate_prompt
 
-    return (
-        "Answer the question using only the provided sources. "
-        "Do not use outside knowledge.\n\n"
-        f"Question:\n{question}\n\n"
-        f"Sources:\n{source_sections}\n\n"
-        "Answer:\n"
-    )
+    return prompt
 
 
 def answer(option: QueryOptions) -> MinimalAnswer:
