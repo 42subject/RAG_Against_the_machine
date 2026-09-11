@@ -211,3 +211,7 @@ improved lexical matching without changing source text or character offsets.
 
 AI was used to review the assignment requirements, inspect implementation
 contracts, compare retrieval improvements, and draft this documentation.
+
+## Note
+
+Section VI.5 of the subject states that each command writes a JSON file, while the CLI specification in Section VI.6 provides output-path arguments and explicitly requires JSON-file output only for `search_dataset` and `answer_dataset`. The single-query `search` and `answer` commands have no output-path argument in that specification. The current implementation prints their Python object representation to the terminal.
