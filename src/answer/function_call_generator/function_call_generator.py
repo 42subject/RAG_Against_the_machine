@@ -16,11 +16,14 @@ class QwenClient:
         self.model = Small_LLM_Model(model_name)
         self.visualizer = Visualizer()
 
-    def _select_displayable_token_id(self, logits: list[float]) -> int:
+    def _select_displayable_token_id(
+        self,
+        ranked_token_ids: list[int],
+    ) -> int:
         """表示可能なトークンまたはEOSが見つかるまで候補を制約する。
 
         Args:
-            logits: 次トークンごとのスコア。
+            ranked_token_ids: スコアの高い順に並べたトークンID。
 
         Returns:
             表示可能な文字列へ復号できるトークンID、またはEOSトークンID。
@@ -28,14 +31,7 @@ class QwenClient:
         Raises:
             RuntimeError: 表示可能なトークンもEOSも存在しない場合。
         """
-        constrained_logits = logits.copy()
-        candidate_token_ids = list(range(len(constrained_logits)))
-
-        while candidate_token_ids:
-            token_id = max(
-                candidate_token_ids,
-                key=lambda candidate_id: constrained_logits[candidate_id],
-            )
+        for token_id in ranked_token_ids:
             if token_id == self.model.eos_token_id:
                 return token_id
 
@@ -44,8 +40,6 @@ class QwenClient:
                 return token_id
 
             self.visualizer.show_rejected_token(token_text)
-            constrained_logits[token_id] = float("-inf")
-            candidate_token_ids.remove(token_id)
 
         raise RuntimeError("No displayable token or EOS token found")
 
@@ -71,27 +65,22 @@ class QwenClient:
 
     def _select_displayable_token(
         self,
-        logits: list[float],
+        ranked_token_ids: list[int],
         generated_text: str,
     ) -> tuple[int | None, str]:
         """表示可能な次トークンを選択する。
 
         Args:
-            logits: 次トークンごとのスコア。
+            ranked_token_ids: スコアの高い順に並べたトークンID。
             generated_text: 生成済みの文字列。
 
         Returns:
             継続時のトークンIDと、出力する表示可能文字列。
             EOSの場合だけIDをNoneにする。
         """
-        top_token_ids = sorted(
-            range(len(logits)),
-            key=lambda token_id: logits[token_id],
-            reverse=True,
-        )[:self.visualizer.TOP_TOKEN_LIMIT]
         top_tokens = [
             (token_id, self.model.decode([token_id]))
-            for token_id in top_token_ids
+            for token_id in ranked_token_ids[:self.visualizer.TOP_TOKEN_LIMIT]
         ]
         self.visualizer.show_top_tokens(top_tokens)
 
@@ -102,7 +91,7 @@ class QwenClient:
         if sentence_completion is not None:
             return None, sentence_completion
 
-        next_token_id = self._select_displayable_token_id(logits)
+        next_token_id = self._select_displayable_token_id(ranked_token_ids)
         if next_token_id == self.model.eos_token_id:
             return None, ""
 
@@ -135,8 +124,13 @@ class QwenClient:
         self.visualizer.initialize()
         for _ in range(MAX_NEW_TOKENS):
             logits = self.model.get_logits_from_input_ids(input_ids)
+            ranked_token_ids = sorted(
+                range(len(logits)),
+                key=lambda token_id: logits[token_id],
+                reverse=True,
+            )
             next_token_id, next_text = self._select_displayable_token(
-                logits,
+                ranked_token_ids,
                 generated_text,
             )
             generated_text += next_text
