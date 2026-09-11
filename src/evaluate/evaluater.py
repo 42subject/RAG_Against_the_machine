@@ -32,13 +32,13 @@ def _calculate_iou(
     if ground_truth.file_path != retrieved_source.file_path:
         return 0.0
 
-    if ground_truth.last_character_index <= ground_truth.first_character_index:
+    if ground_truth.last_character_index < ground_truth.first_character_index:
         raise ValueError(
             "Invalid ground-truth source range: "
             f"{ground_truth.first_character_index}-"
             f"{ground_truth.last_character_index}"
         )
-    if retrieved_source.last_character_index <= (
+    if retrieved_source.last_character_index < (
         retrieved_source.first_character_index
     ):
         raise ValueError(
@@ -56,7 +56,8 @@ def _calculate_iou(
         - max(
             ground_truth.first_character_index,
             retrieved_source.first_character_index,
-        ),
+        )
+        + 1,
     )
     union_length = (
         max(
@@ -67,6 +68,7 @@ def _calculate_iou(
             ground_truth.first_character_index,
             retrieved_source.first_character_index,
         )
+        + 1
     )
     return intersection_length / union_length
 
