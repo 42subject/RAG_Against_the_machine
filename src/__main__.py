@@ -150,7 +150,8 @@ class CLI:
         except ValidationError as error:
             raise FireError(error.errors()[0]["msg"])
 
-        print(evaluater(options))
+        recall, k = evaluater(options)
+        print(f"recall@{k}: {recall}")
 
 
 def main() -> None:

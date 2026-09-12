@@ -2,11 +2,13 @@ RAG against the machine.pdf
 RAG against the machine_ja.pdf
 
 moulinette/
+
 .venv/
+__pycache__/
+.mypy_cache
 
 data/**
 !data/**/
 !data/**/.gitkeep
 data/raw/*/
 
-__pycache__/

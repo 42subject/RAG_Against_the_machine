@@ -137,14 +137,14 @@ def _set_ground_truth_dict(
     return ground_truth_by_id
 
 
-def evaluater(option: EvaluateOptions) -> float:
+def evaluater(option: EvaluateOptions) -> tuple[float, int]:
     """検索結果と正解データを読み込み、質問ごとのRecallを平均する。
 
     Args:
         option: 検索結果と正解データセットのパス。
 
     Returns:
-        全質問の平均Recall@k。
+        全質問の平均Recall@k
 
     Raises:
         OSError: 入力ファイルを読み込めない場合。
@@ -203,4 +203,4 @@ def evaluater(option: EvaluateOptions) -> float:
             f"{sorted(missing_question_ids)[0]}"
         )
 
-    return sum(recalls) / len(recalls)
+    return (sum(recalls) / len(recalls), student_results.k)
