@@ -23,3 +23,12 @@ exclude = [
 [[tool.mypy.overrides]]
 module = "src.llm_sdk.*"
 ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = ["fire", "fire.*"]
+ignore_missing_imports = true
+
+[dependency-groups]
+dev = [
+    "types-tqdm>=4.70.0.20260906",
+]
