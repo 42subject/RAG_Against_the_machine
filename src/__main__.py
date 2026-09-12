@@ -39,12 +39,12 @@ class CLI:
 
         indexer(options)
 
-    def search(self, question: str, k: int = 10) -> None:
+    def search(self, question: str, k: int = 5) -> None:
         """質問に対して関連度の高いチャンクをk件返す。
 
         Args:
             question (str): 質問文
-            k (int, optional): 返答数. Defaults to 10.
+            k (int, optional): 返答数. Defaults to 5.
 
         Raises:
             FireError: 質問または取得件数が不正な場合。
@@ -62,14 +62,14 @@ class CLI:
             print(source.model_dump_json())
 
     def search_dataset(
-            self, dataset_path: Path, save_directory: Path, k: int = 10
+            self, dataset_path: Path, save_directory: Path, k: int = 5
             ) -> None:
         """dataset_pathのjsonファイルに入ってる質問全てに対してサーチをする。
 
         Args:
             dataset_path (Path): datasetのパス
             save_directory (Path): 結果の保存先
-            k (int, optional): 返答数. Defaults to 10.
+            k (int, optional): 返答数. Defaults to 5.
 
         Raises:
             FireError: 入力オプションが不正な場合。
@@ -85,12 +85,12 @@ class CLI:
 
         dataset_searcher(options)
 
-    def answer(self, question: str, k: int = 10) -> None:
+    def answer(self, question: str, k: int = 5) -> None:
         """質問に対して回答をする。
 
         Args:
             question (str): 質問文
-            k (int, optional): 回答生成時に参照する検索結果の最大件数. Defaults to 10.
+            k (int, optional): 回答生成時に参照する検索結果の最大件数. Defaults to 5.
 
         Raises:
             FireError: 質問または取得件数が不正な場合。

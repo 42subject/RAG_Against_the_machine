@@ -81,7 +81,7 @@ class ChunkBuffer:
 
         chunk = Chunk(
             text=self._current_text,
-            word_count=len(self._current_text.split()),
+            word_count=len(tokenizer(self._current_text)),
             file_path=str(self._file_path.relative_to(PROJECT_ROOT)),
             first_character_index=first_character_index,
             last_character_index=self._current_character_index,
