@@ -58,7 +58,8 @@ class CLI:
             raise FireError(error.errors()[0]["msg"])
 
         sources = searcher(options)
-        print(sources)
+        for source in sources:
+            print(source.model_dump_json())
 
     def search_dataset(
             self, dataset_path: Path, save_directory: Path, k: int = 10
@@ -102,7 +103,7 @@ class CLI:
         except ValidationError as error:
             raise FireError(error.errors()[0]["msg"])
 
-        print(answer(options))
+        print(answer(options).model_dump_json())
 
     def answer_dataset(
             self, student_search_results_path: Path, save_directory: Path
