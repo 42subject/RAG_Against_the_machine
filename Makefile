@@ -59,7 +59,10 @@ debug:
 
 clean:
 	rm -rf .mypy_cache .pytest_cache
-	find src -type d -name __pycache__ -prune -exec rm -rf {}
+	find src -type d -name __pycache__ -prune -exec rm -rf {} +
+
+fclean: clean
+	rm -rf .venv
 
 lint:
 	uv run flake8 .
